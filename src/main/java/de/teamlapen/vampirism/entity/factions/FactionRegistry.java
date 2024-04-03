@@ -15,7 +15,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -25,7 +24,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.common.util.NonNullSupplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -352,9 +350,9 @@ public class FactionRegistry implements IFactionRegistry {
 
         protected final PlayableFactionBuilder<T> factionBuilder;
         protected int maxLevel = 0;
-        protected BiFunction<Integer, IPlayableFaction.TitleGender, Component> lordTitleFunction = (a, b) -> Component.literal("Lord " + a);
+        protected ILordTitleProvider lordTitleFunction = (LordTitleProvider) (a, b) -> Component.literal("Lord " + a);
         protected boolean lordSkillsEnabled;
-        protected List<MinionBuilder<T,?>> minions = new ArrayList<>();
+        protected List<MinionBuilder<T, ?>> minions = new ArrayList<>();
 
         public LordPlayerBuilder(PlayableFactionBuilder<T> factionBuilder) {
             this.factionBuilder = factionBuilder;
@@ -368,6 +366,12 @@ public class FactionRegistry implements IFactionRegistry {
 
         @Override
         public @NotNull LordPlayerBuilder<T> lordTitle(@NotNull BiFunction<Integer, IPlayableFaction.TitleGender, Component> lordTitleFunction) {
+            this.lordTitleFunction = (LordTitleProvider) lordTitleFunction::apply;
+            return this;
+        }
+
+        @Override
+        public ILordPlayerBuilder<T> lordTitle(@NotNull ILordTitleProvider lordTitleFunction) {
             this.lordTitleFunction = lordTitleFunction;
             return this;
         }
@@ -445,6 +449,14 @@ public class FactionRegistry implements IFactionRegistry {
 
                 public record CommandEntry<Z extends IMinionData,T>(String name, T defaultValue, ArgumentType<T> type, BiConsumer<Z,T> setter, BiFunction<CommandContext<CommandSourceStack>, String, T> getter) implements ICommandEntry<Z,T> {
                 }
+            }
+        }
+
+        public interface LordTitleProvider extends ILordTitleProvider {
+
+            @Override
+            default Component getShort(int level, IPlayableFaction.TitleGender titleGender) {
+                return getLordTitle(level, titleGender);
             }
         }
     }

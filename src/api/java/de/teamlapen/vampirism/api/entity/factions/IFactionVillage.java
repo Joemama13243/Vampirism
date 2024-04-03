@@ -40,9 +40,6 @@ public interface IFactionVillage {
 
     boolean isBanner(@NotNull ItemStack stack);
 
-    /**
-     * @deprecated internal use only
-     */
     @ApiStatus.Internal
     default @NotNull IFactionVillage build() {
         return this;
